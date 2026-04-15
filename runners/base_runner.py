@@ -1,24 +1,24 @@
 import os
 from abc import ABC, abstractmethod
+from typing import Any
 
 class BaseRunner(ABC):
-    def __init__(self, config):
+    """
+    すべての実行モード（Standard, Randomなど）の基底となる抽象クラス。
+    設定の保持や、出力ディレクトリの生成といった共通インフラ機能を提供します。
+    """
+    
+    def __init__(self, config: Any) -> None:
+        """
+        Args:
+            config: 設定情報（モジュールまたはConfigオブジェクト）
+        """
         self.config = config
-        # self.engine = ExecutionEngine(config)
     
     @abstractmethod
-    def run(self): pass
-
-    def get_directory_name(self):
-        run_name = self.config.RUN_NAME
-        mode_name = self.config.RUNNER_MODE
-
-        base_name = f"{run_name}_{mode_name}"
-        output_dir = base_name
-        counter = 1
-
-        while os.path.isdir(output_dir):
-            output_dir = f"{base_name}_{counter}"
-            counter += 1
-            
-        return output_dir
+    def run(self) -> None:
+        """
+        最適化プロセスのメインロジック。
+        サブクラス（StandardRunner等）で必ずオーバーライドして実装する必要があります。
+        """
+        pass

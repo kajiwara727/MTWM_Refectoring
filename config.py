@@ -1,22 +1,15 @@
 # 実行名を定義します。
-RUN_NAME = "Test"
+from core import Target
 
+RUN_NAME = "Test"
 # Runnerモード
 RUNNER_MODE = "auto"
-
 MAX_MIXER_SIZE = 5
+
 TARGETS = [
-    {'name': 'Target 1', 'ratios': [15,1,2]},
-    {'name': 'Target 2', 'ratios': [8,1,9]},
-    {'name': 'Target 3', 'ratios': [1,8,9]}
-
-    # TimeTest
-    # {'name': 'Target 1', 'ratios': [2, 12,3,1]},
-    # {'name': 'Target 2', 'ratios': [5,3,4,6]},
-    # {'name': 'Target 3', 'ratios': [7,3,7,1]},
-    # {'name': 'Target 4', 'ratios': [9,2,6,1]},
-    # {'name': 'Target 5', 'ratios': [13,1,1,3]},
-
+    Target(name='Target 1', ratios=[2, 11, 5]),
+    Target(name='Target 2', ratios=[8, 1, 9]),
+    Target(name='Target 3', ratios=[1, 8, 9])
 ]
 
 # --- 'manual' モード用設定 ---

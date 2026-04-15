@@ -1,9 +1,6 @@
 # runners/__init__.py
 from .base_runner import BaseRunner
-from .standard_runner import StandardRunner
+from .factory import get_runner
 
-RUNNER_MAP = {
-    "auto": StandardRunner,
-}
-
-__all__ = ["BaseRunner", "RUNNER_MAP"]
+# 外部からアクセスして良いものだけを表示
+__all__ = ["BaseRunner", "get_runner"]
