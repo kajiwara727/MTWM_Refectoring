@@ -32,7 +32,7 @@ class MTWMProblem:
                     'is_leaf': l == 0,
                     # ここに具体的な数値を保持（最適化計算で定数として使用）
                     'p_value': node_obj.p_value,
-                    'factor': self.targets[m].factors[l]
+                    'factor': node_obj.mixer_size
                 }
         return nodes
 

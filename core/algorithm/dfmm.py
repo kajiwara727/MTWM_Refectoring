@@ -66,7 +66,8 @@ def build_skeleton_tree(target: Target) -> Dict[Tuple[int, int], MixingNode]:
         current_level_nodes: List[MixingNode] = []
 
         for k in range(num_nodes_at_level):
-            node = MixingNode(id=(l, k))
+            # factor (target.factors[l]) をノードに保持させる
+            node = MixingNode(id=(l, k), mixer_size=factor) 
             tree_nodes[node.id] = node
             current_level_nodes.append(node)
 

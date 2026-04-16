@@ -12,6 +12,7 @@ class Target:
 @dataclass
 class MixingNode:
     id: Tuple[int, int]  # (level, k) のタプル
+    mixer_size: int = 0
     children: List['MixingNode'] = field(default_factory=list) #  入力元,どこから液滴を運んでくるかのリスト
     p_value: Optional[int] = None # 液滴の重み
     dispense_inputs: List[int] = field(default_factory=list) # 試薬割り当て用
