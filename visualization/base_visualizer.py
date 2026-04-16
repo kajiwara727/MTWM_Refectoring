@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import networkx as nx
 import matplotlib.pyplot as plt
 from typing import Any
+
+from core.models import NodeAddress
 from .config import VisualizerConfig
 
 class BaseVisualizer(ABC):
@@ -44,3 +46,9 @@ class BaseVisualizer(ABC):
         if show:
             plt.show()
         plt.close(fig)
+    
+    def _calculate_position(self, address: 'NodeAddress', is_single_target: bool = False) -> tuple[float, float]:
+        """座標計算ロジックを一元化"""
+        x_target_offset = 0 if is_single_target else address.target_id * self.config.X_SPACING_TARGET
+        x_pos = x_target_offset + address.index * self.config.X_SPACING_NODE
+        return (x_pos, -address.level)

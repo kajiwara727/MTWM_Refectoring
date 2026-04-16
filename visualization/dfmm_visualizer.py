@@ -1,30 +1,35 @@
+# visualization/dfmm_visualizer.py
 import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.patches as mpatches
-from typing import Dict, Tuple, Any
-from core.models import MixingNode
+from typing import Dict, Any
+from core.models import MixingNode, NodeAddress
 from .base_visualizer import BaseVisualizer
 
 class DFMMVisualizer(BaseVisualizer):
-    def __init__(self, tree_nodes: Dict[Tuple[int, int], MixingNode], config=None):
+    def __init__(self, tree_nodes: Dict[NodeAddress, MixingNode], config=None):
         super().__init__(config if config else __import__('visualization.config').config.VisualizerConfig)
         self._build_graph(tree_nodes)
 
-    def _build_graph(self, tree_nodes: Dict[Tuple[int, int], MixingNode]) -> None:
-        for idx, node_obj in tree_nodes.items():
-            l, k = idx
-            self.G.add_node(idx, obj=node_obj, is_leaf=(l == 0), p_value=node_obj.p_value)
-            self.pos[idx] = (k * self.config.X_SPACING_NODE, -l)
+    def _build_graph(self, tree_nodes: Dict[NodeAddress, MixingNode]) -> None:
+        for address, node_obj in tree_nodes.items():
+            self.G.add_node(address, obj=node_obj, is_leaf=(address.level == 0), droplet_weight=node_obj.droplet_weight)
+            self.pos[address] = self._calculate_position(address, is_single_target=True)
             
             for child in node_obj.children:
-                self.G.add_edge(child.id, idx, edge_type='default', color='black', weight=1.5)
+                self.G.add_edge(child.address, address, edge_type='default', color='black', weight=1.5)
 
     def _get_node_label(self, node_data: Dict[str, Any]) -> str:
         node_obj = node_data.get('obj')
         if not node_obj: return "Unknown"
-        label_parts = [f"ID:{node_obj.id}", f"P:{node_data.get('p_value', '-')}"]
-        if hasattr(node_obj, 'dispense_inputs') and node_obj.dispense_inputs:
-            label_parts.append(f"Reagents:\n{node_obj.dispense_inputs}")
+        
+        label_parts = [
+            f"ID:({node_obj.address.level},{node_obj.address.index})", 
+            f"P:{node_data.get('droplet_weight', '-')}"
+        ]
+        if node_obj.reagent_dispensations:
+            label_parts.append(f"Reagents:\n{node_obj.reagent_dispensations}")
+            
         return "\n".join(label_parts)
 
     def draw(self, output_path: str, title: str = "DFMM Routing Tree", show: bool = False) -> None:

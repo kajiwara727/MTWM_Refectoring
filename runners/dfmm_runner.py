@@ -1,6 +1,6 @@
 # runners/dfmm_runner.py
 from .base_runner import BaseRunner
-from core import apply_auto_factors, build_dfmm_routing_tree, calculate_p_values
+from core import apply_auto_factors, build_dfmm_routing_tree, calculate_droplet_weights
 
 class DFMMRunner(BaseRunner):
     """
@@ -14,13 +14,12 @@ class DFMMRunner(BaseRunner):
             self.config.MAX_MIXER_SIZE
         )
 
-        for target in targets:
+        for target_id, target in enumerate(targets):
             print(f"\nターゲット処理中: {target.name}")
             
-            tree_nodes = build_dfmm_routing_tree(target)
-            calculate_p_values(tree_nodes, target.factors)
+            tree_nodes = build_dfmm_routing_tree(target, target_id=target_id)
+            calculate_droplet_weights(tree_nodes, target.factors)
             
-            # BaseRunnerの共通メソッドを呼び出す
             file_name = f"{target.name.replace(' ', '_').lower()}_dfmm.png"
             self.visualize(
                 mode='dfmm',

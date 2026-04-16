@@ -3,12 +3,12 @@ from core import Target
 
 RUN_NAME = "Test"
 # Runnerモード
-RUNNER_MODE = "auto"
+RUNNER_MODE = "dfmm"
 MAX_MIXER_SIZE = 5
 
 TARGETS = [
-    Target(name='Target 1', ratios=[2,11,5]),
-    Target(name='Target 2', ratios=[8, 1, 9]),
+    Target(name='Target 1', ratios=[2,13,5]),
+    Target(name='Target 2', ratios=[4, 1, 7]),
     Target(name='Target 3', ratios=[1, 8, 9])
 ]
 

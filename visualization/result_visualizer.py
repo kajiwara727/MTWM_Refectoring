@@ -1,36 +1,36 @@
+# visualization/result_visualizer.py
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
-from typing import Dict, Any
+from core.solver.dto import OptimizationResult
 from .base_visualizer import BaseVisualizer
 
 class MTWMResultVisualizer(BaseVisualizer):
-    def __init__(self, solution_data: Dict[str, Any], config=None):
+    def __init__(self, solution_data: OptimizationResult, config=None):
         super().__init__(config if config else __import__('visualization.config').config.VisualizerConfig)
         self.solution = solution_data
         self._build_graph(self.solution)
 
-    def _build_graph(self, solution: Dict[str, Any]) -> None:
-        for node in solution.get("nodes", []):
-            node_id = node["id"]
-            self.G.add_node(node_id, node_type='mixing', **node)
-            m, l, k = node_id
-            self.pos[node_id] = (m * self.config.X_SPACING_TARGET + k * self.config.X_SPACING_NODE, -l)
+    def _build_graph(self, solution: OptimizationResult) -> None:
+        for node in solution.nodes:
+            address = node.address
+            self.G.add_node(address, node_type='mixing', node_res=node)
+            self.pos[address] = self._calculate_position(address)
 
-        for node in solution.get("nodes", []):
-            mixing_id = node["id"]
-            for t_idx, vol in enumerate(node.get('r', [])):
+        for node in solution.nodes:
+            mixing_addr = node.address
+            for t_idx, vol in enumerate(node.injected_reagent_volumes):
                 if vol > 0:
-                    reagent_id = (mixing_id, f"reagent_t{t_idx}")
+                    reagent_id = (mixing_addr, f"reagent_t{t_idx}")
                     self.G.add_node(reagent_id, node_type='reagent', label=f"t{t_idx}", volume=vol)
-                    mx, my = self.pos[mixing_id]
+                    mx, my = self.pos[mixing_addr]
                     self.pos[reagent_id] = (mx + (t_idx * 0.4 - 0.2), my + self.config.Y_OFFSET_REAGENT)
-                    self.G.add_edge(reagent_id, mixing_id, volume=vol, edge_type='reagent')
+                    self.G.add_edge(reagent_id, mixing_addr, volume=vol, edge_type='reagent')
 
-        for edge in solution.get("edges", []):
-            src, dst, vol = edge["source"], edge["target"], edge["volume"]
-            is_intra = (src[0] == dst[0])
+        for edge in solution.edges:
+            src, dst, vol = edge.source, edge.target, edge.volume
+            is_intra = (src.target_id == dst.target_id)
             self.G.add_edge(src, dst, volume=vol, edge_type='tree', is_intra=is_intra)
 
     def draw(self, output_path: str, title: str = "MTWM Optimized Result", show: bool = False) -> None:
@@ -49,11 +49,14 @@ class MTWMResultVisualizer(BaseVisualizer):
 
         # Mixing Nodes
         nx.draw_networkx_nodes(self.G, self.pos, nodelist=mixing_nodes, node_color="white", node_size=self.config.RESULT_NODE_SIZE, edgecolors="black", ax=ax)
-        nx.draw_networkx_labels(self.G, self.pos, labels={n: f"ID:({n[0]},{n[1]},{n[2]})\nIn:{self.G.nodes[n]['total_input']}" for n in mixing_nodes}, font_size=self.config.FONT_SIZE, ax=ax)
+        
+        labels = {n: f"ID:({n.target_id},{n.level},{n.index})\nIn:{self.G.nodes[n]['node_res'].total_input}" for n in mixing_nodes}
+        nx.draw_networkx_labels(self.G, self.pos, labels=labels, font_size=self.config.FONT_SIZE, ax=ax)
 
         for n in mixing_nodes:
             x, y = self.pos[n]
-            ax.text(x, y + self.config.Y_OFFSET_STATE, f"State: {self.G.nodes[n].get('R', [])}", 
+            state = self.G.nodes[n]['node_res'].concentration_state
+            ax.text(x, y + self.config.Y_OFFSET_STATE, f"State: {state}", 
                     fontsize=self.config.STATE_FONT_SIZE, ha='center', fontweight='bold', 
                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='gray', boxstyle='round,pad=0.2'))
 
@@ -75,6 +78,6 @@ class MTWMResultVisualizer(BaseVisualizer):
 
         self._draw_background_levels(ax)
         
-        plt.title(f"{title}\nTotal waste fluids: {self.solution.get('total_waste_fluids', 0)}", fontsize=16)
+        plt.title(f"{title}\nTotal waste fluids: {self.solution.total_waste_fluids}", fontsize=16)
         plt.axis('off')
         self._save_and_close(fig, output_path, show)

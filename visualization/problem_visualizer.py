@@ -1,3 +1,4 @@
+# visualization/problem_visualizer.py
 import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.patches as mpatches
@@ -10,26 +11,28 @@ class MTWMProblemVisualizer(BaseVisualizer):
         self._build_graph(problem)
 
     def _build_graph(self, problem: MTWMProblem) -> None:
-        nodes_metadata = problem.nodes_metadata
-        for idx, data in nodes_metadata.items():
-            m, l, k = idx
-            self.G.add_node(idx, **data)
-            self.pos[idx] = (m * self.config.X_SPACING_TARGET + k * self.config.X_SPACING_NODE, -l)
+        for address, meta in problem.nodes_metadata.items():
+            self.G.add_node(address, obj=meta.obj, is_leaf=meta.is_leaf, droplet_weight=meta.droplet_weight)
+            self.pos[address] = self._calculate_position(address)
 
-        for dst_idx, sources in problem.potential_sources_map.items():
-            for src_idx in sources:
-                dst_node_obj = nodes_metadata[dst_idx]['obj']
-                m_dst, m_src = dst_idx[0], src_idx[0]
+        for dst_addr, sources in problem.potential_sources_map.items():
+            for src_addr in sources:
+                dst_node_obj = problem.nodes_metadata[dst_addr].obj
                 
-                is_default_edge = (m_src == m_dst) and any(child.id == (src_idx[1], src_idx[2]) for child in dst_node_obj.children)
+                is_default_edge = (src_addr.target_id == dst_addr.target_id) and any(child.address == src_addr for child in dst_node_obj.children)
                 color, edge_type = ('black', 'default') if is_default_edge else ('red', 'potential')
-                self.G.add_edge(src_idx, dst_idx, edge_type=edge_type, color=color, weight=1.5 if is_default_edge else 1.0)
+                self.G.add_edge(src_addr, dst_addr, edge_type=edge_type, color=color, weight=1.5 if is_default_edge else 1.0)
 
     def draw(self, output_path: str, title: str = "MTWM Initial Problem Structure", show: bool = False) -> None:
         fig, ax = plt.subplots(figsize=(14, 9))
         
         node_colors = ["lightgreen" if d.get('is_leaf') else "skyblue" for _, d in self.G.nodes(data=True)]
-        labels = {n: f"ID:({n[0]},{n[1]},{n[2]})\nP:{d.get('p_value', '-')}" for n, d in self.G.nodes(data=True)}
+        
+        # NodeAddress を使用してラベルを構築
+        labels = {
+            n: f"ID:({n.target_id},{n.level},{n.index})\nP:{d.get('droplet_weight', '-')}" 
+            for n, d in self.G.nodes(data=True)
+        }
 
         nx.draw_networkx_nodes(self.G, self.pos, ax=ax, node_color=node_colors, node_size=self.config.NODE_SIZE, edgecolors="black")
         nx.draw_networkx_labels(self.G, self.pos, ax=ax, labels=labels, font_size=self.config.FONT_SIZE)
