@@ -3,7 +3,7 @@ from core import Target
 
 RUN_NAME = "Test"
 # Runnerモード
-RUNNER_MODE = "auto"
+RUNNER_MODE = "dfmm"
 MAX_MIXER_SIZE = 5
 
 TARGETS = [
