@@ -1,4 +1,6 @@
-from .tree_visualizer import MixingTreeVisualizer
-from .result_visualizer import MTWMResultVisualizer
+# visualization/__init__.py
+from .factory import get_visualizer
+from .config import VisualizerConfig
 
-__all__ = ["MixingTreeVisualizer", "MTWMResultVisualizer"]
+# 外部モジュールにはFactory関数と設定クラスのみを公開する
+__all__ = ["get_visualizer", "VisualizerConfig"]
