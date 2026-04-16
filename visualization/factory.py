@@ -1,31 +1,40 @@
-from typing import Any, Optional
-from .dfmm_visualizer import DFMMVisualizer
-from .problem_visualizer import MTWMProblemVisualizer
-from .result_visualizer import MTWMResultVisualizer
+import os
+from .builders import DFMMGraphBuilder, MTWMProblemGraphBuilder, MTWMResultGraphBuilder
+from .renderers import DFMMRenderer, MTWMProblemRenderer, MTWMResultRenderer
 from .config import VisualizerConfig
 
-def get_visualizer(mode: str, data: Any, config: Optional[type] = None):
+def export_visualization(mode: str, data, filename: str, title: str, config=None):
     """
-    指定されたモードに応じて適切なVisualizerのインスタンスを生成して返す。
+    データ構造からグラフを構築し、レンダリングして出力する一連の処理を実行します。
+    """
+    cfg = config or VisualizerConfig
     
-    Args:
-        mode (str): 'dfmm', 'problem', 'result' のいずれか
-        data (Any): 可視化対象のデータ (Dict, MTWMProblem, ソリューション結果など)
-        config (type, optional): 独自の設定クラス。指定がない場合はデフォルトのVisualizerConfigを使用。
-        
-    Returns:
-        BaseVisualizer: 生成されたVisualizerのインスタンス
-        
-    Raises:
-        ValueError: 未知のモードが指定された場合
-    """
-    target_config = config if config else VisualizerConfig
+    # 出力先ディレクトリの決定
+    output_dir = "output/dfmm_plots" if mode == 'dfmm' else "output"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, filename)
 
+    # モードに応じた Builder と Renderer の実行
     if mode == 'dfmm':
-        return DFMMVisualizer(data, target_config)
+        builder = DFMMGraphBuilder(cfg)
+        G, pos = builder.build(data)
+        renderer = DFMMRenderer(G, pos, cfg)
+        renderer.render(output_path, title)
+        
     elif mode == 'problem':
-        return MTWMProblemVisualizer(data, target_config)
+        builder = MTWMProblemGraphBuilder(cfg)
+        G, pos = builder.build(data)
+        renderer = MTWMProblemRenderer(G, pos, cfg)
+        renderer.render(output_path, title)
+        
     elif mode == 'result':
-        return MTWMResultVisualizer(data, target_config)
+        builder = MTWMResultGraphBuilder(cfg)
+        G, pos = builder.build(data)
+        renderer = MTWMResultRenderer(G, pos, cfg)
+        # Result時のみ、タイトル用に総廃棄液量を渡す
+        renderer.render(output_path, title, total_waste=data.total_waste_fluids)
+        
     else:
-        raise ValueError(f"Unknown visualizer mode: '{mode}'")
+        raise ValueError(f"Unknown visualization mode: '{mode}'")
+    
+    print(f"  [Visualizing] {title} を出力完了: {output_path}")

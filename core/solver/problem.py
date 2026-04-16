@@ -5,19 +5,10 @@ from core.models import Target, MixingNode, NodeAddress
 
 @dataclass
 class NodeOptimizationMetadata:
-    """数理最適化モデル構築に必要なノードのメタデータ"""
     obj: MixingNode
     is_leaf: bool
     droplet_weight: int
     factor: int
-    
-    # ソルバー側の変数キー（Or-Toolsで変数を生成する際の識別用）
-    # 変数キー自体は文字列などで構築しやすくするためタプルや識別子を保持するリストなどにするか、
-    # ここではシンプルに生成予定のリストを保持する
-    var_keys_R: List[Tuple] = field(default_factory=list)
-    var_keys_r: List[Tuple] = field(default_factory=list)
-    var_key_total_input: Optional[Tuple] = None
-    var_key_waste: Optional[Tuple] = None
     potential_src_addresses: List[NodeAddress] = field(default_factory=list)
 
 class MTWMProblem:

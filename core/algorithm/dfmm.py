@@ -3,6 +3,24 @@ import copy
 from typing import List, Dict
 from core.models import Target, MixingNode, NodeAddress
 
+def build_complete_skeleton_tree(target: Target, target_id: int) -> Dict[NodeAddress, MixingNode]:
+    """
+    MTWM用: ベースツリーの構築と重み計算を一度に行い、
+    完全に初期化されたツリーを返します。
+    """
+    tree_nodes = build_skeleton_tree(target, target_id)
+    # 内部で副作用が発生しても、外部には完成品だけを返すのでカプセル化される
+    calculate_droplet_weights(tree_nodes, target.factors)
+    return tree_nodes
+
+def build_complete_dfmm_tree(target: Target, target_id: int) -> Dict[NodeAddress, MixingNode]:
+    """
+    純粋DFMM用: ルーティングツリーの構築と重み計算を一度に行います。
+    """
+    tree_nodes = build_dfmm_routing_tree(target, target_id)
+    calculate_droplet_weights(tree_nodes, target.factors)
+    return tree_nodes
+
 def find_factors_for_sum(ratio_sum: int, max_factor: int) -> List[int]:
     if ratio_sum <= 1: 
         return []

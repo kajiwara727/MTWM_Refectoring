@@ -6,9 +6,8 @@ from .models import Target, MixingNode, NodeAddress
 # ===== Algorithm (DFMMの純粋な計算ロジック) =====
 from .algorithm.dfmm import (
     apply_auto_factors,
-    build_skeleton_tree,
-    build_dfmm_routing_tree,
-    calculate_droplet_weights
+    build_complete_dfmm_tree,
+    build_complete_skeleton_tree,
 )
 
 # 外部モジュール（Runners, Solversなど）に公開するAPI
@@ -20,7 +19,6 @@ __all__ = [
     
     # Algorithm
     "apply_auto_factors",
-    "build_skeleton_tree",
-    "build_dfmm_routing_tree",
-    "calculate_droplet_weights",
+    "build_complete_dfmm_tree",
+    "build_complete_skeleton_tree",
 ]

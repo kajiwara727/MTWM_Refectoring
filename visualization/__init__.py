@@ -1,6 +1,4 @@
-# visualization/__init__.py
-from .factory import get_visualizer
+from .factory import export_visualization
 from .config import VisualizerConfig
 
-# 外部モジュールにはFactory関数と設定クラスのみを公開する
-__all__ = ["get_visualizer", "VisualizerConfig"]
+__all__ = ["export_visualization", "VisualizerConfig"]

@@ -1,31 +1,23 @@
 # runners/dfmm_runner.py
 from .base_runner import BaseRunner
-from core import apply_auto_factors, build_dfmm_routing_tree, calculate_droplet_weights
+from core import apply_auto_factors, build_complete_dfmm_tree
 
 class DFMMRunner(BaseRunner):
     """
-    単一ターゲットごとのDFMMアルゴリズムの結果を可視化するためのランナー
+    単一ターゲットごとのDFMMアルゴリズムの結果データを構築するランナー
     """
     def run(self):
-        print("--- Runner Mode: DFMM (Visualization Only) ---")
-        
+        # self.config.TARGETS -> self.config.targets (設定クラスのプロパティ名に合わせる)
         targets = apply_auto_factors(
-            self.config.TARGETS, 
-            self.config.MAX_MIXER_SIZE
+            self.config.targets, 
+            self.config.max_mixer_size
         )
 
+        tree_structures = {}
         for target_id, target in enumerate(targets):
-            print(f"\nターゲット処理中: {target.name}")
-            
-            tree_nodes = build_dfmm_routing_tree(target, target_id=target_id)
-            calculate_droplet_weights(tree_nodes, target.factors)
-            
-            file_name = f"{target.name.replace(' ', '_').lower()}_dfmm.png"
-            self.visualize(
-                mode='dfmm',
-                data=tree_nodes,
-                output_filename=file_name,
-                title=f"DFMM Routing Tree: {target.name}"
-            )
+            # 構築と重み計算がカプセル化された関数を呼ぶ
+            tree_nodes = build_complete_dfmm_tree(target, target_id=target_id)
+            tree_structures[target.name] = tree_nodes
 
-        print("\n[Success] すべてのターゲットのDFMM可視化が完了しました。")
+        # 可視化処理は行わず、main.py 側にデータを返す
+        return {"targets": targets, "tree_structures": tree_structures}
