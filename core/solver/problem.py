@@ -55,14 +55,17 @@ class MTWMProblem:
             # 2. 濃度整合性チェック
             meta_dst = self.nodes_metadata[dst_idx]
             meta_src = self.nodes_metadata[src_idx]
+
+            is_default = False
+            if m_src == m_dst:  # 同じターゲット内であること
+                is_default = any(child.id == (l_src, k_src) for child in meta_dst['obj'].children)
             
             # (P_dst / f_dst) が P_src で割り切れる場合のみ接続可能
-            if (meta_dst['p_value'] // meta_dst['factor']) % meta_src['p_value'] != 0:
-                continue
+            if not is_default:
+                if (meta_dst['p_value'] // meta_dst['factor']) % meta_src['p_value'] != 0:
+                    continue
 
             # 3. 親子関係（デフォルトエッジ）の判定
-            # デフォルトエッジは無条件で候補に入れる（上記濃度チェックは通るはず）
-            
             if dst_idx not in source_map:
                 source_map[dst_idx] = []
             source_map[dst_idx].append(src_idx)

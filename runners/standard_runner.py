@@ -1,6 +1,8 @@
 from .base_runner import BaseRunner
 from core import apply_auto_factors, build_skeleton_tree, calculate_p_values
 from core.solver.problem import MTWMProblem
+from visualization import MixingTreeVisualizer 
+import os
 
 class StandardRunner(BaseRunner):
     """
@@ -36,32 +38,9 @@ class StandardRunner(BaseRunner):
 
         print("[Success] MTWMProblemの定式化が完了しました。")
         
-        # ==========================================
-        # ▼ ここから下を追加して詳細を出力します ▼
-        # ==========================================
-        print("\n" + "="*50)
-        print("🔍 MTWMProblem 内部詳細レポート")
-        print("="*50)
-
-        print("\n[1] エッジの接続マップ (どこからどこへ液滴を運べるか)")
-        for dst_idx, sources in problem.potential_sources_map.items():
-            if sources:
-                print(f"  📥 送信先 Node {dst_idx} は以下のノードから受け取り可能:")
-                for src in sources:
-                    print(f"      <--- 送信元 Node {src}")
-            else:
-                print(f"  📥 送信先 Node {dst_idx} は外部(試薬)からの注入のみ")
-
-        print("\n[2] ノードごとの変数割り当て詳細 (nodes_metadata)")
-        for idx, data in problem.nodes_metadata.items():
-            m, l, k = idx
-            node_type = "🌱 Leaf (試薬直接注入)" if data['is_leaf'] else "⚙️ Intermediate (中間混合ノード)"
-            
-            print(f"\n■ Node {idx} [{node_type}]")
-            print(f"  ├ P値(濃度寄与度): {data['p_value']}, Factor(分割数): {data['factor']}")
-            print(f"  ├ 濃度変数(R)のキー: {data['var_keys_R']}")
-            
-            if not data['is_leaf']:
-                print(f"  ├ 廃棄量変数のキー: {data.get('var_key_waste')}")
-            
-            print(f"  └ 接続元候補(エッジ)の数: {len(data['potential_src_indices'])} 件")
+        print("\n[Visualizing] 木構造の画像生成を開始します...")
+        mtwm_visualizer = MixingTreeVisualizer(problem)
+        
+        # outputディレクトリに保存
+        os.makedirs("output", exist_ok=True)
+        mtwm_visualizer.draw(output_path="output/mtwm_graph.png", title="MTWM Final Problem Structure")
