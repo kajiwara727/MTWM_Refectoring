@@ -123,3 +123,71 @@ class MTWMResultRenderer(BaseRenderer):
         plt.title(f"Total waste fluids: {total_waste}", fontsize=16)
         plt.axis('off')
         self._save_and_close(fig, output_path, show)
+
+class ProposedHeuristicRenderer(BaseRenderer):
+    def render(self, output_path: str, title: str, show: bool = False) -> None:
+        fig, ax = plt.subplots(figsize=(14, 9))
+        
+        # 試薬ごとのカラーパレット (T0:赤系, T1:青系, T2:緑系, T3:オレンジ系...)
+        palette = ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#c2c2f0']
+        node_colors = []
+        labels = {}
+        
+        # 追加: 実際にグラフ内で単独最多となった試薬のインデックスを記録するセット
+        used_reagents = set()
+        
+        for n, d in self.G.nodes(data=True):
+            dom = d.get('dominant_reagents', set())
+            
+            if not dom:
+                color = 'lightgray'
+                dom_str = "None"
+            elif len(dom) == 1:
+                r_idx = list(dom)[0]
+                color = palette[r_idx % len(palette)]
+                dom_str = f"T{r_idx}"
+                used_reagents.add(r_idx)  # 使用された試薬を記録
+            else:
+                color = '#ffb3e6'
+                dom_str = ",".join([f"T{r}" for r in sorted(dom)])
+                
+            node_colors.append(color)
+            labels[n] = f"ID:({n.target_id},{n.level},{n.index})\nDom:[{dom_str}]"
+            
+        nx.draw_networkx_nodes(self.G, self.pos, ax=ax, node_color=node_colors, node_size=self.config.NODE_SIZE, edgecolors="black")
+        nx.draw_networkx_labels(self.G, self.pos, ax=ax, labels=labels, font_size=self.config.FONT_SIZE)
+
+        default_edges = [(u, v) for u, v, d in self.G.edges(data=True) if d['edge_type'] == 'default']
+        potential_edges = [(u, v) for u, v, d in self.G.edges(data=True) if d['edge_type'] == 'heuristic_potential']
+
+        if default_edges:
+            nx.draw_networkx_edges(self.G, self.pos, ax=ax, edgelist=default_edges, edge_color='black', width=1.5, arrows=True, arrowsize=self.config.ARROW_SIZE)
+        if potential_edges:
+            nx.draw_networkx_edges(self.G, self.pos, ax=ax, edgelist=potential_edges, edge_color='blue', width=1.0, arrows=True, arrowsize=self.config.ARROW_SIZE, connectionstyle="arc3,rad=0.2")
+
+        self._draw_background_levels(ax)
+        
+        # ▼ 修正: 凡例を動的に構築する
+        handles = []
+        
+        # 1. 動的に取得した試薬の色を凡例に追加
+        for r_idx in sorted(used_reagents):
+            color = palette[r_idx % len(palette)]
+            handles.append(mpatches.Patch(color=color, label=f'Dominant: Reagent T{r_idx}'))
+            
+        # 2. その他の状態（複数同数、割り当てなし）とエッジの凡例を追加
+        handles.extend([
+            mpatches.Patch(color='#ffb3e6', label='Multiple Dominant'),
+            mpatches.Patch(color='lightgray', label='No Dominant'),
+            mpatches.Patch(color='black', label='Default Connection'),
+            mpatches.Patch(color='blue', label='Allowed Connection (Heuristic)')
+        ])
+        
+        # bbox_to_anchor を使ってグラフの枠外（右側）に凡例を配置
+        ax.legend(handles=handles, loc='upper left', bbox_to_anchor=(1.02, 1), borderaxespad=0.)
+        
+        # グラフのレイアウトを調整（枠外の凡例が見切れないようにする）
+        plt.tight_layout()
+        
+        plt.title(title, fontsize=14)
+        self._save_and_close(fig, output_path, show)

@@ -61,3 +61,27 @@ class MTWMResultGraphBuilder(BaseGraphBuilder):
             is_intra = (src.target_id == dst.target_id)
             self.G.add_edge(src, dst, volume=vol, edge_type='tree', is_intra=is_intra)
         return self.G, self.pos
+
+class ProposedHeuristicGraphBuilder(BaseGraphBuilder):
+    def build(self, problem):
+        # 提案手法の問題クラス (ProposedMTWMProblem) からメタデータを取得
+        for address, meta in problem.nodes_metadata.items():
+            # meta.dominant_reagents をノードのデータとして保持
+            self.G.add_node(
+                address, 
+                obj=meta.obj, 
+                is_leaf=meta.is_leaf, 
+                droplet_weight=meta.droplet_weight,
+                dominant_reagents=getattr(meta, 'dominant_reagents', set())
+            )
+            self.pos[address] = self._calculate_position(address)
+
+        # 許可された接続候補だけをエッジとして追加
+        for dst_addr, sources in problem.potential_sources_map.items():
+            for src_addr in sources:
+                dst_node_obj = problem.nodes_metadata[dst_addr].obj
+                is_default_edge = (src_addr.target_id == dst_addr.target_id) and any(child.address == src_addr for child in dst_node_obj.children)
+                color, edge_type = ('black', 'default') if is_default_edge else ('blue', 'heuristic_potential')
+                self.G.add_edge(src_addr, dst_addr, edge_type=edge_type, color=color, weight=1.5 if is_default_edge else 1.0)
+                
+        return self.G, self.pos

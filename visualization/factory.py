@@ -1,14 +1,16 @@
 import os
-from .builders import DFMMGraphBuilder, MTWMProblemGraphBuilder, MTWMResultGraphBuilder
-from .renderers import DFMMRenderer, MTWMProblemRenderer, MTWMResultRenderer
+from .builders import DFMMGraphBuilder, MTWMProblemGraphBuilder, MTWMResultGraphBuilder, ProposedHeuristicGraphBuilder
+from .renderers import DFMMRenderer, MTWMProblemRenderer, MTWMResultRenderer, ProposedHeuristicRenderer
 from .config import VisualizerConfig
 
-# 描画モードと使用するクラスのマッピング (ストラテジーパターン)
 _VISUALIZATION_STRATEGIES = {
     'dfmm': (DFMMGraphBuilder, DFMMRenderer),
     'problem': (MTWMProblemGraphBuilder, MTWMProblemRenderer),
     'result': (MTWMResultGraphBuilder, MTWMResultRenderer),
+    'heuristic': (ProposedHeuristicGraphBuilder, ProposedHeuristicRenderer),
 }
+
+# ... 以降の export_visualization メソッドは変更なし ...
 
 def export_visualization(mode: str, data, filename: str, title: str, config=None, output_dir=None):
     if mode not in _VISUALIZATION_STRATEGIES:

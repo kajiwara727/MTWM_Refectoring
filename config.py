@@ -20,7 +20,7 @@ class MTWMConfig:
     visualize_enabled: bool = True   # 追加: 全体の可視化フラグ
 
     def __post_init__(self):
-        valid_modes = ["auto", "dfmm", "random"]
+        valid_modes = ["auto", "dfmm", "random", "proposed"]
         if self.runner_mode not in valid_modes:
             raise ValueError(f"runner_mode は {valid_modes} のいずれかである必要があります。")
         
@@ -33,7 +33,7 @@ class MTWMConfig:
 
 def get_default_config() -> MTWMConfig:
     return MTWMConfig(
-        runner_mode="auto",
+        runner_mode="dfmm",
         max_mixer_size=5,
         targets=[
             Target(name='Target 1', ratios=[12,5,1]),
