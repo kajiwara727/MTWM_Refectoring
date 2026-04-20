@@ -14,6 +14,6 @@ class VisualizerConfig:
     RESULT_NODE_SIZE = 3000
     REAGENT_NODE_SIZE = 800
     STATE_FONT_SIZE = 8
-    Y_OFFSET_STATE = 0.3
+    Y_OFFSET_STATE = 0.15  # ← 0.3 から 0.15 に変更して空白を詰める
     Y_OFFSET_REAGENT = -0.5
     VOLUME_CMAP = cm.viridis

@@ -120,6 +120,6 @@ class MTWMResultRenderer(BaseRenderer):
         cbar.set_label('Droplet Volume (Flow)', fontsize=10, fontweight='bold')
 
         self._draw_background_levels(ax)
-        plt.title(f"{title}\nTotal waste fluids: {total_waste}", fontsize=16)
+        plt.title(f"Total waste fluids: {total_waste}", fontsize=16)
         plt.axis('off')
         self._save_and_close(fig, output_path, show)
