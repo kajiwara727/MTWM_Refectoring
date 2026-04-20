@@ -1,10 +1,11 @@
 from .standard_runner import StandardRunner
 from .dfmm_runner import DFMMRunner
-# インスタンス生成のロジックを隠蔽
-# マップの定義
+from .random_runner import RandomRunner
+
 _RUNNER_MAP = {
     "auto": StandardRunner,
-    "dfmm": DFMMRunner
+    "dfmm": DFMMRunner,
+    "random": RandomRunner
 }
 
 def get_runner(mode: str, config):

@@ -1,23 +1,24 @@
-# runners/dfmm_runner.py
 from .base_runner import BaseRunner
-from core import apply_auto_factors, build_complete_dfmm_tree
+from core import build_complete_dfmm_tree
+from visualization import export_visualization
 
 class DFMMRunner(BaseRunner):
-    """
-    単一ターゲットごとのDFMMアルゴリズムの結果データを構築するランナー
-    """
-    def run(self):
-        # self.config.TARGETS -> self.config.targets (設定クラスのプロパティ名に合わせる)
-        targets = apply_auto_factors(
-            self.config.targets, 
-            self.config.max_mixer_size
-        )
+    def run(self) -> dict:
+        targets = self.prepare_targets(self.config.targets)
+        tree_structures = {t.name: build_complete_dfmm_tree(t, target_id=idx) for idx, t in enumerate(targets)}
 
-        tree_structures = {}
-        for target_id, target in enumerate(targets):
-            # 構築と重み計算がカプセル化された関数を呼ぶ
-            tree_nodes = build_complete_dfmm_tree(target, target_id=target_id)
-            tree_structures[target.name] = tree_nodes
+        settings_summary = f"targets{len(targets)}_mixer{self.config.max_mixer_size}"
+        session_dir = self.create_session_dir(settings_summary)
 
-        # 可視化処理は行わず、main.py 側にデータを返す
-        return {"targets": targets, "tree_structures": tree_structures}
+        input_data = {"max_mixer_size": self.config.max_mixer_size, "targets": targets}
+        output_data = {"status": "success", "message": "DFMM Routing Trees Generated"}
+        self.save_reports(session_dir, input_data, output_data)
+
+        return {"targets": targets, "tree_structures": tree_structures, "session_dir": session_dir}
+
+    def visualize(self, result_data: dict) -> None:
+        session_dir = result_data["session_dir"]
+        if result_data.get("tree_structures"):
+            for target_name, tree_nodes in result_data["tree_structures"].items():
+                file_name = f"{target_name.replace(' ', '_').lower()}_dfmm.png"
+                export_visualization('dfmm', tree_nodes, file_name, f"DFMM Routing Tree: {target_name}", output_dir=session_dir)

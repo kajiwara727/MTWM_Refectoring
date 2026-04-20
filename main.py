@@ -1,14 +1,13 @@
+# main.py
 import argparse
 from config import get_default_config
 from runners import get_runner
-from visualization import export_visualization
 
 def main():
     app_config = get_default_config()
     
-    # 拡張性：コマンドライン引数でモード指定可能に
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', type=str, help="Runner mode (auto, dfmm)")
+    parser.add_argument('--mode', type=str, help="Runner mode (auto, dfmm, random)")
     args = parser.parse_args()
     
     if args.mode:
@@ -18,19 +17,16 @@ def main():
     
     try:
         runner = get_runner(app_config.runner_mode, app_config)
-        result = runner.run()
         
-        # モードごとの可視化振り分け
-        if app_config.runner_mode == "auto" and result.get("solution"):
-            export_visualization('problem', result["problem"], "mtwm_problem_structure.png", "MTWM Problem Structure")
-            export_visualization('result', result["solution"], "mtwm_optimized_result.png", "MTWM Optimized Result")
+        # 1. シミュレーションとデータ保存の実行
+        result_data = runner.run()
+        
+        # 2. 結果の可視化 (ランナー自身が描画ロジックを知っている)
+        if app_config.visualize_enabled:
+            runner.visualize(result_data)
             
-        elif app_config.runner_mode == "dfmm" and result.get("tree_structures"):
-            for target_name, tree_nodes in result["tree_structures"].items():
-                file_name = f"{target_name.replace(' ', '_').lower()}_dfmm.png"
-                export_visualization('dfmm', tree_nodes, file_name, f"DFMM Routing Tree: {target_name}")
-        
-        print("\n[Finish] すべての工程が正常に完了しました。")
+        print(f"\n[Finish] 処理が完了しました。データと画像は以下に保存されています:")
+        print(f"  -> {result_data.get('session_dir', 'Unknown directory')}")
             
     except Exception as e:
         print(f"Error: {e}")
