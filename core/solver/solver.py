@@ -42,9 +42,13 @@ class MTWMSolver:
         self._build_model()
 
     def _configure_solver(self):
-        self.solver.parameters.num_workers = 0  
-        self.solver.parameters.max_time_in_seconds = 300.0 
+        self.solver.parameters.num_workers = 16
+        self.solver.parameters.max_time_in_seconds = 5000
         self.solver.parameters.log_search_progress = True
+        self.solver.parameters.linearization_level = 0    # 線形化のレベルを下げる
+        self.solver.parameters.boolean_encoding_level = 1 # 整数変数のブール変換レベル
+        self.solver.parameters.max_num_cuts = 10000        # カット（枝刈り）の最大数
+        self.solver.parameters.cut_level = 2              # カット生成の強度を最大化
 
     def _build_model(self):
         self._define_variables()
@@ -53,6 +57,7 @@ class MTWMSolver:
         self._set_concentration_constraints()
         self._set_mixer_capacity_and_activity_constraints()
         self._set_objective_function()
+        self._set_ratio_sum_constraints()
 
     def _define_variables(self):
         for addr, meta in self.problem.nodes_metadata.items():
@@ -197,3 +202,12 @@ class MTWMSolver:
             nodes=nodes_res,
             edges=edges_res
         )
+    
+    def _set_ratio_sum_constraints(self):
+        """冗長制約：各ノードの比率の合計は、その解像度(p)と一致する"""
+        for addr, meta in self.problem.nodes_metadata.items():
+            vars_obj = self.node_vars[addr]
+            p_val = meta.droplet_weight  # 解像度 (p)
+            
+            # is_active == 1 なら合計は p_val、0 なら 0
+            self.model.Add(sum(vars_obj.R) == p_val * vars_obj.is_active)

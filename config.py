@@ -33,7 +33,7 @@ class MTWMConfig:
 
 def get_default_config() -> MTWMConfig:
     return MTWMConfig(
-        runner_mode="dfmm",
+        runner_mode="auto",
         max_mixer_size=5,
         targets=[
             Target(name='Target 1', ratios=[12,5,1]),
