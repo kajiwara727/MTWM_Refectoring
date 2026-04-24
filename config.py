@@ -36,9 +36,10 @@ def get_default_config() -> MTWMConfig:
         runner_mode="auto",
         max_mixer_size=5,
         targets=[
-            Target(name='Target 1', ratios=[12,5,1]),
-            Target(name='Target 2', ratios=[2,3,13]),
-            Target(name='Target 3', ratios=[1, 8, 9])
+            Target(name='Target 1', ratios=[31,13,17,34,1,21,18]),
+            Target(name='Target 2', ratios=[9,9,14,34,19,30,20]),
+            Target(name='Target 3', ratios=[14,9,24,45,10,28,5]),
+            Target(name='Target 4', ratios=[22,21,11,23,16,22,20])
         ],
         random_config=RandomConfig(
             num_targets=3,
