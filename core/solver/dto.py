@@ -26,3 +26,4 @@ class OptimizationResult:
     total_waste_fluids: int
     nodes: List[NodeFlowResult]
     edges: List[EdgeFlowResult]
+    execution_time: float = 0.0

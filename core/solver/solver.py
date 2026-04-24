@@ -164,16 +164,18 @@ class MTWMSolver:
         
         status = self.solver.Solve(self.model, printer)
         
+        execution_time = time.time() - start_time
+        
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
             status_str = "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE"
             print(f"Status: {status_str}, Objective (waste fluids): {int(self.solver.ObjectiveValue())}")
-            print(f"Time: {time.time() - start_time:.2f}s")
-            return self._extract_solution()
+            print(f"Time: {execution_time:.2f}s")
+            return self._extract_solution(execution_time) 
         else:
             print("No solution found.")
             return None
 
-    def _extract_solution(self) -> OptimizationResult:
+    def _extract_solution(self, execution_time: float) -> OptimizationResult: # 引数追加
         nodes_res = []
         total_waste = 0
         
@@ -200,14 +202,13 @@ class MTWMSolver:
             objective_value=int(self.solver.ObjectiveValue()),
             total_waste_fluids=total_waste,
             nodes=nodes_res,
-            edges=edges_res
+            edges=edges_res,
+            execution_time=execution_time
         )
     
     def _set_ratio_sum_constraints(self):
-        """冗長制約：各ノードの比率の合計は、その解像度(p)と一致する"""
         for addr, meta in self.problem.nodes_metadata.items():
             vars_obj = self.node_vars[addr]
-            p_val = meta.droplet_weight  # 解像度 (p)
+            p_val = meta.droplet_weight 
             
-            # is_active == 1 なら合計は p_val、0 なら 0
             self.model.Add(sum(vars_obj.R) == p_val * vars_obj.is_active)

@@ -43,7 +43,7 @@ class RandomRunner(BaseRunner):
                     output_dir=session_dir
                 )
 
-        self.save_reports(session_dir, {"executions": inputs_log}, {"executions": outputs_log})
+        self.save_reports(session_dir, {"runs": inputs_log}, {"runs": outputs_log})
         
         return {"session_dir": session_dir, "status": "success"}
 

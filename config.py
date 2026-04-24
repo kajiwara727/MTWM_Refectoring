@@ -7,7 +7,7 @@ class RandomConfig:
     num_targets: int
     num_reagents: int
     ratio_sum: int
-    num_executions: int = 1
+    num_executions: int = 20
     visualize: bool = True
 
 @dataclass
