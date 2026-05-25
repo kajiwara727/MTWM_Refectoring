@@ -93,7 +93,7 @@ class MTWMSolver:
         p.linearization_level = cfg.linearization_level
 
         # ★ 分岐戦略
-        p.search_branching = cfg.search_branching
+        p.search_branching = type(p).SearchBranching(cfg.search_branching)
 
         # カット生成（CP-SAT では控えめが良いことが多い）
         p.max_num_cuts = 1000
