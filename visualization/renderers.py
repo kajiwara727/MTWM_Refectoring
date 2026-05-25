@@ -124,6 +124,148 @@ class MTWMResultRenderer(BaseRenderer):
         plt.axis('off')
         self._save_and_close(fig, output_path, show)
 
+class ExtensionProblemRenderer(BaseRenderer):
+    """拡張ノード候補を含む問題グラフのレンダラー"""
+
+    def render(self, output_path: str, title: str, show: bool = False) -> None:
+        import matplotlib.patches as mpatches
+        fig, ax = plt.subplots(figsize=(16, 10))
+
+        regular_nodes = [n for n, d in self.G.nodes(data=True) if d.get("node_kind") == "regular"]
+        ext_nodes     = [n for n, d in self.G.nodes(data=True) if d.get("node_kind") == "extension"]
+
+        reg_colors = ["lightgreen" if d.get("is_leaf") else "skyblue"
+                      for n, d in self.G.nodes(data=True) if d.get("node_kind") == "regular"]
+        reg_labels = {
+            n: f"({n.target_id},{n.level},{n.index})\nP:{d.get('droplet_weight','-')}"
+            for n, d in self.G.nodes(data=True) if d.get("node_kind") == "regular"
+        }
+        ext_labels = {
+            n: d.get("label", str(n))
+            for n, d in self.G.nodes(data=True) if d.get("node_kind") == "extension"
+        }
+
+        nx.draw_networkx_nodes(self.G, self.pos, nodelist=regular_nodes,
+                               node_color=reg_colors, node_size=self.config.NODE_SIZE,
+                               edgecolors="black", ax=ax)
+        nx.draw_networkx_nodes(self.G, self.pos, nodelist=ext_nodes,
+                               node_color="plum", node_size=self.config.NODE_SIZE * 1.2,
+                               node_shape="D", edgecolors="purple", ax=ax)
+        nx.draw_networkx_labels(self.G, self.pos, labels={**reg_labels, **ext_labels},
+                                font_size=self.config.FONT_SIZE, ax=ax)
+
+        for etype, color, rad in [
+            ("default",       "black",  0.0),
+            ("potential",     "red",    0.2),
+            ("ext_input",     "purple", 0.15),
+            ("ext_potential", "orange", 0.25),
+        ]:
+            edges = [(u, v) for u, v, d in self.G.edges(data=True) if d.get("edge_type") == etype]
+            if edges:
+                nx.draw_networkx_edges(self.G, self.pos, edgelist=edges,
+                                       edge_color=color, width=1.2, arrows=True,
+                                       arrowsize=self.config.ARROW_SIZE,
+                                       connectionstyle=f"arc3,rad={rad}", ax=ax)
+
+        self._draw_background_levels(ax)
+        handles = [
+            mpatches.Patch(color="black",  label="Default"),
+            mpatches.Patch(color="red",    label="Potential (MTWM)"),
+            mpatches.Patch(color="purple", label="Ext. Node Input"),
+            mpatches.Patch(color="orange", label="Ext. Node Output Candidate"),
+            mpatches.Patch(color="plum",   label="Extension Node"),
+        ]
+        ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1), borderaxespad=0.)
+        plt.tight_layout()
+        plt.title(title, fontsize=13)
+        self._save_and_close(fig, output_path, show)
+
+
+class ExtensionResultRenderer(BaseRenderer):
+    """拡張ノードを含む最適化結果グラフのレンダラー"""
+
+    def render(self, output_path: str, title: str, total_waste: int = 0, show: bool = False) -> None:
+        import matplotlib.patches as mpatches
+        import matplotlib.colors as mcolors
+        import matplotlib.cm as cm
+
+        fig, ax = plt.subplots(figsize=(20, 13))
+
+        regular_nodes = [n for n, d in self.G.nodes(data=True) if d.get("node_kind") == "regular"]
+        ext_nodes     = [n for n, d in self.G.nodes(data=True) if d.get("node_kind") == "extension"]
+        reagent_nodes = [n for n, d in self.G.nodes(data=True) if d.get("node_kind") == "reagent"]
+
+        all_volumes = [d["volume"] for _, _, d in self.G.edges(data=True) if "volume" in d] or [0]
+        norm = mcolors.Normalize(vmin=min(all_volumes), vmax=max(all_volumes) + 1)
+        scalar_map = cm.ScalarMappable(norm=norm, cmap=self.config.VOLUME_CMAP)
+
+        # 通常ノード
+        nx.draw_networkx_nodes(self.G, self.pos, nodelist=regular_nodes,
+                               node_color="white", node_size=self.config.RESULT_NODE_SIZE,
+                               edgecolors="black", ax=ax)
+        reg_labels = {
+            n: f"({n.target_id},{n.level},{n.index})\nIn:{d['node_res'].total_input}"
+            for n, d in self.G.nodes(data=True) if d.get("node_kind") == "regular"
+        }
+        nx.draw_networkx_labels(self.G, self.pos, labels=reg_labels,
+                                font_size=self.config.FONT_SIZE, ax=ax)
+
+        for n, d in self.G.nodes(data=True):
+            if d.get("node_kind") == "regular":
+                x, y = self.pos[n]
+                state = d["node_res"].concentration_state
+                ax.text(x, y + self.config.Y_OFFSET_STATE, f"{state}",
+                        fontsize=self.config.STATE_FONT_SIZE, ha="center",
+                        fontweight="bold",
+                        bbox=dict(facecolor="white", alpha=0.9, edgecolor="gray", boxstyle="round,pad=0.2"))
+
+        # 拡張ノード
+        nx.draw_networkx_nodes(self.G, self.pos, nodelist=ext_nodes,
+                               node_color="plum", node_size=self.config.RESULT_NODE_SIZE * 1.1,
+                               node_shape="D", edgecolors="purple", ax=ax)
+        ext_labels = {
+            n: d.get("label", "") for n, d in self.G.nodes(data=True) if d.get("node_kind") == "extension"
+        }
+        nx.draw_networkx_labels(self.G, self.pos, labels=ext_labels,
+                                font_size=self.config.FONT_SIZE, ax=ax)
+
+        # 試薬ノード
+        nx.draw_networkx_nodes(self.G, self.pos, nodelist=reagent_nodes,
+                               node_shape="s", node_color="orange",
+                               node_size=self.config.REAGENT_NODE_SIZE, ax=ax)
+        nx.draw_networkx_labels(self.G, self.pos,
+                                labels={n: d["label"] for n, d in self.G.nodes(data=True) if d.get("node_kind") == "reagent"},
+                                font_size=self.config.FONT_SIZE, ax=ax)
+
+        # エッジ描画
+        for u, v, d in self.G.edges(data=True):
+            vol = d.get("volume", 0)
+            edge_color = scalar_map.to_rgba(vol)
+            width = 1.5 + vol * 1.5
+            etype = d.get("edge_type", "tree")
+            style = "dashed" if etype == "extension" else "solid"
+            rad   = 0.15 if etype == "extension" else (0.1 if not d.get("is_intra", True) else 0.0)
+            nx.draw_networkx_edges(self.G, self.pos, edgelist=[(u, v)],
+                                   width=width, edge_color=[edge_color], style=style,
+                                   arrows=True, arrowsize=20,
+                                   connectionstyle=f"arc3,rad={rad}", ax=ax)
+
+        cbar = fig.colorbar(scalar_map, ax=ax, shrink=0.5, pad=0.05)
+        cbar.set_label("Droplet Volume", fontsize=10, fontweight="bold")
+
+        handles = [
+            mpatches.Patch(color="white", label="Regular Mixing Node"),
+            mpatches.Patch(color="plum",  label="Extension Node (proposed)"),
+            mpatches.Patch(color="orange",label="Reagent"),
+        ]
+        ax.legend(handles=handles, loc="upper left")
+
+        self._draw_background_levels(ax)
+        plt.title(f"{title}   [Total waste: {total_waste}]", fontsize=14)
+        plt.axis("off")
+        self._save_and_close(fig, output_path, show)
+
+
 class ProposedHeuristicRenderer(BaseRenderer):
     def render(self, output_path: str, title: str, show: bool = False) -> None:
         fig, ax = plt.subplots(figsize=(14, 9))

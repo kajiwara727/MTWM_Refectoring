@@ -1,13 +1,24 @@
 import os
-from .builders import DFMMGraphBuilder, MTWMProblemGraphBuilder, MTWMResultGraphBuilder, ProposedHeuristicGraphBuilder
-from .renderers import DFMMRenderer, MTWMProblemRenderer, MTWMResultRenderer, ProposedHeuristicRenderer
+from .builders import (
+    DFMMGraphBuilder, MTWMProblemGraphBuilder, MTWMResultGraphBuilder,
+    ProposedHeuristicGraphBuilder,
+    ExtensionProblemGraphBuilder, ExtensionResultGraphBuilder,   # 【提案手法】
+)
+from .renderers import (
+    DFMMRenderer, MTWMProblemRenderer, MTWMResultRenderer,
+    ProposedHeuristicRenderer,
+    ExtensionProblemRenderer, ExtensionResultRenderer,           # 【提案手法】
+)
 from .config import VisualizerConfig
 
 _VISUALIZATION_STRATEGIES = {
-    'dfmm': (DFMMGraphBuilder, DFMMRenderer),
-    'problem': (MTWMProblemGraphBuilder, MTWMProblemRenderer),
-    'result': (MTWMResultGraphBuilder, MTWMResultRenderer),
-    'heuristic': (ProposedHeuristicGraphBuilder, ProposedHeuristicRenderer),
+    'dfmm':             (DFMMGraphBuilder,              DFMMRenderer),
+    'problem':          (MTWMProblemGraphBuilder,        MTWMProblemRenderer),
+    'result':           (MTWMResultGraphBuilder,         MTWMResultRenderer),
+    'heuristic':        (ProposedHeuristicGraphBuilder,  ProposedHeuristicRenderer),
+    # 【提案手法】拡張ノード用
+    'extension_problem':(ExtensionProblemGraphBuilder,   ExtensionProblemRenderer),
+    'extension_result': (ExtensionResultGraphBuilder,    ExtensionResultRenderer),
 }
 
 # ... 以降の export_visualization メソッドは変更なし ...
@@ -31,7 +42,12 @@ def export_visualization(mode: str, data, filename: str, title: str, config=None
     
     # モードに応じた追加パラメータの調整
     kwargs = {'show': False}
-    if mode == 'result':
-        kwargs['total_waste'] = getattr(data, 'total_waste_fluids', 0)
+    if mode in ('result', 'extension_result'):
+        # result モードでは OptimizationResult そのもの、extension_result では dict 経由
+        if isinstance(data, dict):
+            sol = data.get('solution')
+            kwargs['total_waste'] = sol.total_waste_fluids if sol else 0
+        else:
+            kwargs['total_waste'] = getattr(data, 'total_waste_fluids', 0)
         
     renderer.render(output_path, title, **kwargs)

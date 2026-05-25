@@ -2,7 +2,9 @@ from .base_runner import BaseRunner
 from core import build_complete_skeleton_tree
 from core.solver.problem import MTWMProblem
 from core.solver.solver import MTWMSolver
+from core.solver.solver_config import SolverConfig
 from visualization import export_visualization
+
 
 class StandardRunner(BaseRunner):
     def run(self) -> dict:
@@ -10,7 +12,15 @@ class StandardRunner(BaseRunner):
         tree_structures = [build_complete_skeleton_tree(t, target_id=idx) for idx, t in enumerate(targets)]
 
         problem = MTWMProblem(targets=targets, tree_structures=tree_structures)
-        solver = MTWMSolver(problem, objective_mode="waste_fluids")
+
+        # 問題規模に応じてプリセットを自動選択
+        total_nodes = len(problem.nodes_metadata)
+        if total_nodes > 80:
+            cfg = SolverConfig.large_mtwm()
+        else:
+            cfg = SolverConfig.default_mtwm()
+
+        solver = MTWMSolver(problem, objective_mode="waste_fluids", solver_config=cfg)
         solution = solver.solve()
         
         settings_summary = f"targets{len(targets)}_mixer{self.config.max_mixer_size}"
